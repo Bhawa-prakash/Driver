@@ -8,6 +8,7 @@ import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.net.Uri;
+import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
@@ -16,6 +17,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.webkit.PermissionRequest;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -43,12 +45,20 @@ import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.Date;
 
+import butterknife.BindView;
 import butterknife.OnClick;
 
 public class MainActivity extends AppCompatActivity {
     Button btnSend;
     PubNub pubnub;
     String lattitude, longitude;
+
+
+    @BindView(R.id.btn_start_location_updates)
+    Button btnStartUpdates;
+
+    @BindView(R.id.btn_stop_location_updates)
+    Button btnStopUpdates;
 
     private String mLastUpdateTime;
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -74,51 +84,50 @@ public class MainActivity extends AppCompatActivity {
         btnSend = findViewById(R.id.button);
         publish();
         startLocationUpdates();
+        locationStart();
 
-
-        btnSend.setOnClickListener(new View.OnClickListener() {
-
-
-            @Override
-            public void onClick(View view) {
-
-                if (mCurrentLocation != null) {
-                    lattitude = String.valueOf(mCurrentLocation.getLatitude());
-                    longitude = String.valueOf(mCurrentLocation.getLongitude());
-
-
-                }
-
-
-                JsonObject position = new JsonObject();
-                position.addProperty("latt", lattitude);
-                position.addProperty("long", longitude);
-
-
-                System.out.println("before pub: " + position);
-                if (pubnub != null) {
-
-                    pubnub.publish()
-                            .message(position)
-                            .channel("Rider_channel")
-                            .async(new PNCallback<PNPublishResult>() {
-                                @Override
-                                public void onResponse(PNPublishResult result, PNStatus status) {
-
-                                    if (!status.isError()) {
-                                        System.out.println("pub timetoken: " + result.getTimetoken());
-                                    }
-                                    System.out.println("pub status code: " + status.getStatusCode());
-                                    Toast.makeText(MainActivity.this, " message send", Toast.LENGTH_SHORT).show();
-                                }
-                            });
-                } else {
-                    Toast.makeText(MainActivity.this, "message not send", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
 
     }
+
+    private void locationStart() {
+
+        if (mCurrentLocation != null) {
+            lattitude = String.valueOf(mCurrentLocation.getLatitude());
+            longitude = String.valueOf(mCurrentLocation.getLongitude());
+
+
+        }
+        JsonObject position = new JsonObject();
+        position.addProperty("latt", lattitude);
+        position.addProperty("long", longitude);
+
+
+        System.out.println("before pub: " + position);
+        if (pubnub != null) {
+
+            pubnub.publish()
+                    .message(position)
+                    .channel("Rider_channel")
+                    .async(new PNCallback<PNPublishResult>() {
+                        @Override
+                        public void onResponse(PNPublishResult result, PNStatus status) {
+
+                            if (!status.isError()) {
+                                System.out.println("pub timetoken: " + result.getTimetoken());
+                            }
+                            System.out.println("pub status code: " + status.getStatusCode());
+                            Toast.makeText(MainActivity.this, " message send", Toast.LENGTH_SHORT).show();
+                            startLocationUpdates();
+                        }
+                    });
+        } else {
+            Toast.makeText(MainActivity.this, "message not send", Toast.LENGTH_SHORT).show();
+        }
+
+
+    }
+
+
 
 
     private void publish() {
@@ -197,11 +206,12 @@ public class MainActivity extends AppCompatActivity {
                     public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
                         Log.i(TAG, "All location settings are satisfied.");
 
-                       /* Toast.makeText(getApplicationContext(), "", Toast.LENGTH_SHORT).show();
+                     /*   Toast.makeText(getApplicationContext(), "Started location updates!", Toast.LENGTH_SHORT).show();
 */
                         //noinspection MissingPermission
                         mFusedLocationClient.requestLocationUpdates(mLocationRequest,
                                 mLocationCallback, Looper.myLooper());
+                                locationStart();
 
 
                     }
@@ -233,8 +243,11 @@ public class MainActivity extends AppCompatActivity {
 
                     }
                 });
-    }
 
+
+
+
+    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -287,6 +300,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+
+
+    }
+
+
 }
-
-
