@@ -84,12 +84,12 @@ public class MainActivity extends AppCompatActivity {
         btnSend = findViewById(R.id.button);
         publish();
         startLocationUpdates();
-        locationStart();
+        messageSend();
 
 
     }
 
-    private void locationStart() {
+    private void messageSend() {
 
         if (mCurrentLocation != null) {
             lattitude = String.valueOf(mCurrentLocation.getLatitude());
@@ -128,8 +128,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
-
     private void publish() {
 
         PNConfiguration pnConfiguration = new PNConfiguration();
@@ -145,6 +143,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+
     private void init() {
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         mSettingsClient = LocationServices.getSettingsClient(this);
@@ -153,10 +152,12 @@ public class MainActivity extends AppCompatActivity {
             public void onLocationResult(LocationResult locationResult) {
                 super.onLocationResult(locationResult);
                 mCurrentLocation = locationResult.getLastLocation();
+                messageSend();
                 mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
 
             }
         };
+
         mRequestingLocationUpdates = false;
         mLocationRequest = new LocationRequest();
         mLocationRequest.setInterval(UPDATE_INTERVAL_IN_MILLISECONDS);
@@ -167,6 +168,7 @@ public class MainActivity extends AppCompatActivity {
         mLocationSettingsRequest = builder.build();
 
     }
+
 
     private void restoreValuesFromBundle(Bundle savedInstanceState) {
         if (savedInstanceState != null) {
@@ -206,12 +208,11 @@ public class MainActivity extends AppCompatActivity {
                     public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
                         Log.i(TAG, "All location settings are satisfied.");
 
-                     /*   Toast.makeText(getApplicationContext(), "Started location updates!", Toast.LENGTH_SHORT).show();
-*/
+                        /*   Toast.makeText(getApplicationContext(), "Started location updates!", Toast.LENGTH_SHORT).show();
+                         */
                         //noinspection MissingPermission
                         mFusedLocationClient.requestLocationUpdates(mLocationRequest,
                                 mLocationCallback, Looper.myLooper());
-                                locationStart();
 
 
                     }
@@ -245,8 +246,6 @@ public class MainActivity extends AppCompatActivity {
                 });
 
 
-
-
     }
 
     @Override
@@ -257,7 +256,7 @@ public class MainActivity extends AppCompatActivity {
                 switch (resultCode) {
                     case Activity.RESULT_OK:
                         Log.e(TAG, "User agreed to make required location settings changes.");
-                        // Nothing to do. startLocationupdates() gets called in onResume again.
+
                         break;
                     case Activity.RESULT_CANCELED:
                         Log.e(TAG, "User chose not to make required location settings changes.");
@@ -284,8 +283,7 @@ public class MainActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
 
-        // Resuming location updates depending on button state and
-        // allowed permissions
+
         if (mRequestingLocationUpdates && checkPermissions()) {
             startLocationUpdates();
         }
@@ -303,7 +301,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-
 
 
     }
